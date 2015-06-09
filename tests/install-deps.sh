@@ -16,10 +16,7 @@ if [ "${CI-}" == true ] ; then
 		# Semaphore installs more dependencies on their platform,
 		# they should be removed from here to save time.
 
-		# If there is some dependency to install then
-		# uncomment the following line and add "sudo apt-get
-		# install -y <dep>" after it.
-
-		# sudo apt-get update -qq || true
+		sudo apt-get update -qq || true
+		sudo apt-get install -y libkeyutils-dev # keyutils deps
 	fi
 fi
