@@ -36,6 +36,7 @@ const (
 
 	EnvLockFd                    = "RKT_LOCK_FD"
 	SELinuxContext               = "RKT_SELINUX_CONTEXT"
+	SELinuxLabel                 = "RKT_SELINUX_LABEL"
 	Stage1IDFilename             = "stage1ID"
 	OverlayPreparedFilename      = "overlay-prepared"
 	PrivateUsersPreparedFilename = "private-users-prepared"

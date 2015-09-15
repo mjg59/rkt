@@ -33,6 +33,8 @@ import (
 	"github.com/coreos/rkt/Godeps/_workspace/src/github.com/coreos/go-systemd/unit"
 	"github.com/coreos/rkt/common"
 	"github.com/coreos/rkt/common/cgroup"
+	"github.com/coreos/rkt/pkg/label"
+	"github.com/coreos/rkt/pkg/selinux"
 	"github.com/coreos/rkt/pkg/uid"
 	"github.com/coreos/rkt/stage1/init/kvm"
 )
@@ -406,6 +408,16 @@ func (p *Pod) appToNspawnArgs(ra *schema.RuntimeApp) ([]string, error) {
 
 	vols := make(map[types.ACName]types.Volume)
 
+	// Bind mounts should be mounted as a generic svirt target without any unique
+	// per-container context in order to allow their contents to be shared - use
+	// the specific context but strip the level down to s0
+	mountlabel := os.Getenv(common.SELinuxLabel)
+	if mountlabel != "" {
+		c := selinux.NewContext(mountlabel)
+		c["level"] = "s0"
+		mountlabel = c.Get()
+	}
+
 	// TODO(philips): this is implicitly creating a mapping from MountPoint
 	// to volumes. This is a nice convenience for users but we will need to
 	// introduce a --mount flag so they can control which mountPoint maps to
@@ -437,6 +449,21 @@ func (p *Pod) appToNspawnArgs(ra *schema.RuntimeApp) ([]string, error) {
 		readOnly := mp.ReadOnly
 		if vol.ReadOnly != nil {
 			readOnly = *vol.ReadOnly
+		}
+
+		// Verify whether the mount already has the correct label, and if not
+		// relabel it
+		if mountlabel != "" {
+			currentlabel, err := selinux.Getfilecon(vol.Source)
+			if err != nil {
+				return nil, fmt.Errorf("Unable to validate SELinux label for %q: %s", vol.Source, err.Error)
+			}
+			if currentlabel != mountlabel {
+				err = label.Relabel(vol.Source, mountlabel, "z")
+				if err != nil {
+					return nil, fmt.Errorf("Unable to relabel %q: %s", vol.Source, err.Error)
+				}
+			}
 		}
 
 		if readOnly {

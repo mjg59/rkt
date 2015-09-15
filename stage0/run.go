@@ -345,6 +345,10 @@ func Run(cfg RunConfig, dir string) {
 		log.Fatalf("setting SELinux context environment: %v", err)
 	}
 
+	if err := os.Setenv(common.SELinuxLabel, fmt.Sprintf("%v", cfg.MountLabel)); err != nil {
+		log.Fatalf("setting SELinux label environment: %v", err)
+	}
+
 	log.Printf("Pivoting to filesystem %s", dir)
 	if err := os.Chdir(dir); err != nil {
 		log.Fatalf("failed changing to dir: %v", err)
