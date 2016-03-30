@@ -56,9 +56,9 @@
 
 STAGE1_FLAVORS := $(call commas-to-spaces,$(RKT_STAGE1_ALL_FLAVORS))
 STAGE1_BUILT_FLAVORS := $(call commas-to-spaces,$(RKT_STAGE1_FLAVORS))
-# filter out the fly flavor - it is special
-STAGE1_FLAVORS := $(filter-out fly,$(STAGE1_FLAVORS))
-STAGE1_BUILT_FLAVORS := $(filter-out fly,$(STAGE1_BUILT_FLAVORS))
+# filter out the fly and win32 flavors - they are special
+STAGE1_FLAVORS := $(filter-out fly win32,$(STAGE1_FLAVORS))
+STAGE1_BUILT_FLAVORS := $(filter-out fly win32,$(STAGE1_BUILT_FLAVORS))
 
 $(foreach f,$(STAGE1_FLAVORS), \
 	$(eval STAGE1_COPY_SO_DEPS_$f :=) \

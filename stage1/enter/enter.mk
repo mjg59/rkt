@@ -1,4 +1,4 @@
-ETR_FLAVORS := $(filter-out kvm,$(STAGE1_FLAVORS))
+ETR_FLAVORS := $(filter-out kvm win32,$(STAGE1_FLAVORS))
 
 ifneq ($(ETR_FLAVORS),)
 

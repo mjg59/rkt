@@ -66,7 +66,7 @@ AC_ARG_WITH([stage1-default-flavor],
 
 AC_ARG_WITH([stage1-flavors],
             [AS_HELP_STRING([--with-stage1-flavors],
-                            [comma-separated list of stage1 flavors; choose from 'src', 'coreos', 'host', 'kvm', 'fly'; default: 'coreos,kvm,fly'])],
+                            [comma-separated list of stage1 flavors; choose from 'src', 'coreos', 'host', 'kvm', 'fly', 'win32'; default: 'coreos,kvm,fly'])],
             [RKT_STAGE1_FLAVORS="${withval}"],
             [RKT_STAGE1_FLAVORS=auto])
 
@@ -223,7 +223,7 @@ AS_CASE([${RKT_STAGE1_DEFAULT_IMAGES_DIR}],
 ## Built stage1 flavors verification
 
 dnl a list of all flavors
-RKT_STAGE1_ALL_FLAVORS=coreos,kvm,host,src,fly
+RKT_STAGE1_ALL_FLAVORS=coreos,kvm,host,src,fly,win32
 
 dnl RKT_ITERATE_FLAVORS iterates all comma-separated flavors stored in
 dnl $1 using an iterator variable $2 and executes body $3.
@@ -239,7 +239,7 @@ dnl additional string to an error message.
 AC_DEFUN([RKT_IS_VALID_FLAVOR],
          [AS_CASE([$1],
                   dnl Correct flavor, nothing to do.
-                  [coreos|kvm|host|src|fly],
+                  [coreos|kvm|host|src|fly|win32],
                           [],
                   dnl Bogus flavor, bail out.
                   [AC_MSG_ERROR([*** Unknown stage1 flavor "$1" $2])])])
@@ -293,6 +293,8 @@ RKT_ITERATE_FLAVORS([${RKT_STAGE1_FLAVORS}],[flavor],
                                       RKT_REQ_PROG([XZ],[xz],[xz])],
                              [host],
                                      [],
+                             [win32],
+                                     [],
                              [fly],
                                      [AC_MSG_WARN([* fly is an experimental stage1 implementation with almost no isolation and less features])],
                              [AC_MSG_ERROR([*** Unhandled flavor "${flavor}", should not happen])])])
@@ -302,7 +304,7 @@ AS_VAR_IF([RKT_SPECIFIED_FLAVORS],[],
           dnl no flavors specified, no checks
           [],
           dnl some flavor are specified, do some checks for stuff needed by any flavor
-          [AC_LANG_PUSH([C])
+          [AS_VAR_IF([RKT_SPECIFIED_FLAVORS],[],[],[AC_LANG_PUSH([C])
            AC_CHECK_HEADER([acl/libacl.h],
                            [],
                            [AC_MSG_ERROR([*** No development headers for libacl found])],
@@ -339,7 +341,7 @@ AS_VAR_IF([RKT_SPECIFIED_FLAVORS],[],
                                           [AC_MSG_RESULT([no])
                                            AC_MSG_ERROR([*** Neither setns function nor __NR_setns macro are available - either both glibc and kernel are too old or their development headers are not installed])])])
 
-           AC_LANG_POP([C])])
+           AC_LANG_POP([C])])])
 
 dnl Validate passed default flavor, it should be one of the built
 dnl stage1 flavors
