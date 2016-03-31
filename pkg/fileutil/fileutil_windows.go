@@ -15,7 +15,7 @@
 package fileutil
 
 import (
-	"filepath"
+	"path/filepath"
 )
 
 func os_CopyTree(src, dest string, uidRange *uid.UidRange) error {
