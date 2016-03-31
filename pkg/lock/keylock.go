@@ -194,13 +194,8 @@ func (l *KeyLock) lock(mode keyLockMode, maxRetries int) error {
 		}
 
 		// Check that the file referenced by the lock fd is the same as
-		// the current file on the filesystem
-		var lockStat, curStat syscall.Stat_t
+		// the current file on the filesystem		
 		lfd, err := l.keyLock.Fd()
-		if err != nil {
-			return err
-		}
-		err = syscall.Fstat(lfd, &lockStat)
 		if err != nil {
 			return err
 		}
@@ -210,12 +205,11 @@ func (l *KeyLock) lock(mode keyLockMode, maxRetries int) error {
 		if err != nil {
 			return err
 		}
-		if err := syscall.Fstat(fd, &curStat); err != nil {
-			syscall.Close(fd)
+		sameFile, err := compareFiles(lfd, fd)
+		if err != nil {
 			return err
 		}
-		syscall.Close(fd)
-		if lockStat.Ino == curStat.Ino && lockStat.Dev == curStat.Dev {
+		if sameFile == true {
 			return nil
 		}
 		if retries >= maxRetries {

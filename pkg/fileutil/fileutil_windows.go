@@ -25,7 +25,6 @@ import (
 
 func os_CopyTree(src, dest string, uidRange *uid.UidRange) error {
 	cleanSrc := filepath.Clean(src)
-	dirs := make(map[string][]syscall.Timespec)
 	copyWalker := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -55,9 +54,6 @@ func os_CopyTree(src, dest string, uidRange *uid.UidRange) error {
 			}
                 default:
 			return fmt.Errorf("unsupported mode: %v", mode)
-		}
-		if mode.IsDir() {
-			dirs[target] = ts
 		}
 
 		return nil

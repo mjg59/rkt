@@ -1,4 +1,4 @@
-// Copyright 2014 Red Hat, Inc
+// Copyright 2015 The rkt Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,33 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !linux,!windows
+// +build linux freebsd netbsd openbsd darwin
 
-package fileutil
+package lock
 
 import (
-	"os"
-	"syscall"
+	"sycall"
 )
 
-func hasHardLinks(fi os.FileInfo) bool {
-	return false
-}
+compareFiles(lfd syscall.Handle, fd syscall.Handle) (bool, error) {
+	var lockStat, curStat syscall.Stat_t
 
-func getInode(fi os.FileInfo) uint64 {
-	return 0
+	err = syscall.Fstat(lfd, &lockStat)
+	if err != nil {
+		return false, err
+	}
+	err = syscall.Fstat(fd, &curStat)
+	if err != nil {
+		return false, err
+	}
+	if lockStat.Ino == curStat.Ino && lockStat.Dev == curStat.Dev {
+		return true, nil
+	}
+	return false, nil
 }
-
-// These functions are from github.com/docker/docker/pkg/system
-
-func LUtimesNano(path string, ts []syscall.Timespec) error {
-	return ErrNotSupportedPlatform
-}
-
-func Lgetxattr(path string, attr string) ([]byte, error) {
-	return nil, ErrNotSupportedPlatform
-}
-
-func Lsetxattr(path string, attr string, data []byte, flags int) error {
-	return ErrNotSupportedPlatform
-}
+	

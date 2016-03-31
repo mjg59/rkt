@@ -15,12 +15,13 @@
 // Package lock implements simple locking primitives on a
 // regular file or directory using flock
 
+// +build linux freebsd netbsd openbsd darwin
+
 package lock
 
 import (
 	"errors"
 	"syscall"
-	"unsafe"
 )
 
 var (
@@ -30,22 +31,10 @@ var (
 	ErrNotRegular = errors.New("not a regular file")
 )
 
-var (
-	modkernel32      = syscall.NewLazyDLL("kernel32.dll")
-	procLockFileEx   = modkernel32.NewProc("LockFileEx")
-	procUnlockFileEx = modkernel32.NewProc("UnlockFileEx")
-)
-
-const (
-	INVALID_FILE_HANDLE     = ^syscall.Handle(0)
-	LOCKFILE_FAIL_IMMEDIATELY = 1
-	LOCKFILE_EXCLUSIVE_LOCK = 2
-)
-
 // FileLock represents a lock on a regular file or a directory
 type FileLock struct {
 	path string
-	fd syscall.Handle
+	fd   int
 }
 
 type LockType int
@@ -55,40 +44,16 @@ const (
 	RegFile
 )
 
-func lockFileEx(h syscall.Handle, flags, reserved, locklow, lockhigh uint32, ol *syscall.Overlapped) (err error) {
-	r1, _, e1 := syscall.Syscall6(procLockFileEx.Addr(), 6, uintptr(h), uintptr(flags), uintptr(reserved), uintptr(locklow), uintptr(lockhigh), uintptr(unsafe.Pointer(ol)))
-	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
-		} else {
-			err = syscall.EINVAL
-		}
-	}
-	return
-}
-
-func unlockFileEx(h syscall.Handle, reserved, locklow, lockhigh uint32, ol *syscall.Overlapped) (err error) {
-	r1, _, e1 := syscall.Syscall6(procUnlockFileEx.Addr(), 5, uintptr(h), uintptr(reserved), uintptr(locklow), uintptr(lockhigh), uintptr(unsafe.Pointer(ol)), 0)
-	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
-		} else {
-			err = syscall.EINVAL
-		}
-	}
-	return
-}
-
 // TryExclusiveLock takes an exclusive lock without blocking.
 // This is idempotent when the Lock already represents an exclusive lock,
 // and tries promote a shared lock to exclusive atomically.
 // It will return ErrLocked if any lock is already held.
 func (l *FileLock) TryExclusiveLock() error {
-	var ol syscall.Overlapped
-	if err := lockFileEx(l.fd, LOCKFILE_FAIL_IMMEDIATELY|LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ol); err != nil {
-		return ErrLocked
+	err := syscall.Flock(l.fd, syscall.LOCK_EX|syscall.LOCK_NB)
+	if err == syscall.EWOULDBLOCK {
+		err = ErrLocked
 	}
-	return nil
+	return err
 }
 
 // TryExclusiveLock takes an exclusive lock on a file/directory without blocking.
@@ -110,9 +75,7 @@ func TryExclusiveLock(path string, lockType LockType) (*FileLock, error) {
 // and promotes a shared lock to exclusive atomically.
 // It will block if an exclusive lock is already held.
 func (l *FileLock) ExclusiveLock() error {
-	var ol syscall.Overlapped
-	err := lockFileEx(l.fd, LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ol)
-	return err
+	return syscall.Flock(l.fd, syscall.LOCK_EX)
 }
 
 // ExclusiveLock takes an exclusive lock on a file/directory.
@@ -133,8 +96,8 @@ func ExclusiveLock(path string, lockType LockType) (*FileLock, error) {
 // and tries demote an exclusive lock to shared atomically.
 // It will return ErrLocked if an exclusive lock already exists.
 func (l *FileLock) TrySharedLock() error {
-	var ol syscall.Overlapped
-	err := lockFileEx(l.fd, LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &ol); if err != nil {
+	err := syscall.Flock(l.fd, syscall.LOCK_SH|syscall.LOCK_NB)
+	if err == syscall.EWOULDBLOCK {
 		err = ErrLocked
 	}
 	return err
@@ -159,11 +122,7 @@ func TrySharedLock(path string, lockType LockType) (*FileLock, error) {
 // and demotes an exclusive lock to shared atomically.
 // It will block if an exclusive lock is already held.
 func (l *FileLock) SharedLock() error {
-	var ol syscall.Overlapped
-	err := lockFileEx(l.fd, 0, 0, 1, 0, &ol); if err != nil {
-		err = ErrLocked
-	}
-	return err
+	return syscall.Flock(l.fd, syscall.LOCK_SH)
 }
 
 // SharedLock takes a co-operative (shared) lock on a file/directory.
@@ -182,17 +141,13 @@ func SharedLock(path string, lockType LockType) (*FileLock, error) {
 
 // Unlock unlocks the lock
 func (l *FileLock) Unlock() error {
-	var ol syscall.Overlapped
-	if err := unlockFileEx(l.fd, 0, 1, 0, &ol); err != nil {
-		return err
-	}
-	return nil
+	return syscall.Flock(l.fd, syscall.LOCK_UN)
 }
 
 // Fd returns the lock's file descriptor, or an error if the lock is closed
-func (l *FileLock) Fd() (syscall.Handle, error) {
+func (l *FileLock) Fd() (int, error) {
 	var err error
-	if l.fd == INVALID_FILE_HANDLE {
+	if l.fd == -1 {
 		err = errors.New("lock closed")
 	}
 	return l.fd, err
@@ -201,15 +156,18 @@ func (l *FileLock) Fd() (syscall.Handle, error) {
 // Close closes the lock which implicitly unlocks it as well
 func (l *FileLock) Close() error {
 	fd := l.fd
-	l.fd = INVALID_FILE_HANDLE
+	l.fd = -1
 	return syscall.Close(fd)
 }
 
 // NewLock opens a new lock on a file without acquisition
 func NewLock(path string, lockType LockType) (*FileLock, error) {
-	l := &FileLock{path: path, fd: INVALID_FILE_HANDLE}
+	l := &FileLock{path: path, fd: -1}
 
-	mode := syscall.O_RDONLY
+	mode := syscall.O_RDONLY | syscall.O_CLOEXEC
+	if lockType == Dir {
+		mode |= syscall.O_DIRECTORY
+	}
 	lfd, err := syscall.Open(l.path, mode, 0)
 	if err != nil {
 		if err == syscall.ENOENT {
@@ -220,6 +178,16 @@ func NewLock(path string, lockType LockType) (*FileLock, error) {
 		return nil, err
 	}
 	l.fd = lfd
+
+	var stat syscall.Stat_t
+	err = syscall.Fstat(lfd, &stat)
+	if err != nil {
+		return nil, err
+	}
+	// Check if the file is a regular file
+	if lockType == RegFile && !(stat.Mode&syscall.S_IFMT == syscall.S_IFREG) {
+		return nil, ErrNotRegular
+	}
 
 	return l, nil
 }
