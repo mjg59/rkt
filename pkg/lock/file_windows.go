@@ -19,7 +19,6 @@ package lock
 
 import (
 	"errors"
-	"sync"
 	"syscall"
 	"unsafe"
 )
@@ -86,7 +85,7 @@ func unlockFileEx(h syscall.Handle, reserved, locklow, lockhigh uint32, ol *sysc
 // It will return ErrLocked if any lock is already held.
 func (l *FileLock) TryExclusiveLock() error {
 	var ol syscall.Overlapped
-	if err := lockFileEx(m.fd, LOCKFILE_FAIL_IMMEDIATELY|LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ol); err != nil {
+	if err := lockFileEx(l.fd, LOCKFILE_FAIL_IMMEDIATELY|LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ol); err != nil {
 		err = ErrLocked
 	}
 	return err
@@ -112,7 +111,7 @@ func TryExclusiveLock(path string, lockType LockType) (*FileLock, error) {
 // It will block if an exclusive lock is already held.
 func (l *FileLock) ExclusiveLock() error {
 	var ol syscall.Overlapped
-	err := lockFileEx(m.fd, LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ol)
+	err := lockFileEx(l.fd, LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ol)
 	return err
 }
 
@@ -135,7 +134,7 @@ func ExclusiveLock(path string, lockType LockType) (*FileLock, error) {
 // It will return ErrLocked if an exclusive lock already exists.
 func (l *FileLock) TrySharedLock() error {
 	var ol syscall.Overlapped
-	err := lockFileEx(m.fd, LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &ol); if err != nil {
+	err := lockFileEx(l.fd, LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &ol); if err != nil {
 		err = ErrLocked
 	}
 	return err
@@ -161,7 +160,7 @@ func TrySharedLock(path string, lockType LockType) (*FileLock, error) {
 // It will block if an exclusive lock is already held.
 func (l *FileLock) SharedLock() error {
 	var ol syscall.Overlapped
-	err := lockFileEx(m.fd, 0, 0, 1, 0, &ol); if err != nil {
+	err := lockFileEx(l.fd, 0, 0, 1, 0, &ol); if err != nil {
 		err = ErrLocked
 	}
 	return err
@@ -183,15 +182,17 @@ func SharedLock(path string, lockType LockType) (*FileLock, error) {
 
 // Unlock unlocks the lock
 func (l *FileLock) Unlock() error {
-	if err := unlockFileEx(m.fd, 0, 1, 0, &ol); err != nil {
-		panic(err)
+	var ol syscall.Overlapped
+	if err := unlockFileEx(l.fd, 0, 1, 0, &ol); err != nil {
+		return err
 	}
+	return nil
 }
 
 // Fd returns the lock's file descriptor, or an error if the lock is closed
 func (l *FileLock) Fd() (int, error) {
 	var err error
-	if l.fd == -1 {
+	if l.fd == INVALID_FILE_HANDLE {
 		err = errors.New("lock closed")
 	}
 	return l.fd, err

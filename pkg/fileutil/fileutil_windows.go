@@ -15,7 +15,12 @@
 package fileutil
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
+	"syscall"
+
+	"github.com/coreos/rkt/pkg/uid"
 )
 
 func os_CopyTree(src, dest string, uidRange *uid.UidRange) error {

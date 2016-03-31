@@ -28,8 +28,6 @@ var exePath string
 
 func init() {
 	// save the program path
-	var err error
-
         name := os.Args[0]
 	if filepath.Base(name) == name {
 		if lp, err := exec.LookPath(name); err == nil {
