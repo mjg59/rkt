@@ -26,7 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
+//	"syscall"
 	"time"
 
 	"github.com/coreos/rkt/pkg/fileutil"

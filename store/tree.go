@@ -32,7 +32,7 @@ import (
 	"github.com/appc/spec/schema/types"
 	"github.com/coreos/rkt/pkg/aci"
 	"github.com/coreos/rkt/pkg/fileutil"
-	"github.com/coreos/rkt/pkg/sys"
+//	"github.com/coreos/rkt/pkg/sys"
 	"github.com/coreos/rkt/pkg/uid"
 	"github.com/hashicorp/errwrap"
 )
