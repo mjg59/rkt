@@ -39,7 +39,7 @@ type NetInfo struct {
 	IP4        *types.IPConfig `json:"-"`
 }
 
-func LoadAt(cdirfd int) ([]NetInfo, error) {
+func LoadAt(cdirfd interface{}) ([]NetInfo, error) {
 	fd, err := fileutil.Openat(cdirfd, filename, syscall.O_RDONLY, 0)
 	if err != nil {
 		return nil, err

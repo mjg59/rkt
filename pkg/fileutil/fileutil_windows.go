@@ -155,10 +155,10 @@ func SetRoot(dir string) error {
 	return nil
 }
 
-func Openat(fd syscall.Handle, filename string, mode int, flags uint32) (syscall.Handle, error) {
+func Openat(fd interface{}, filename string, mode int, flags uint32) (syscall.Handle, error) {
 	pathLen := uint32(syscall.MAX_PATH)
 	path := make([]uint16, pathLen)
-	_, err := getFinalPathNameByHandle(fd, &path[0], pathLen,
+	_, err := getFinalPathNameByHandle(fd.(syscall.Handle), &path[0], pathLen,
 		FILE_NAME_NORMALIZED|VOLUME_NAME_DOS)
 	if err != nil {
 		return 0, err

@@ -17,13 +17,13 @@
 package lock
 
 import (
-	"sycall"
+	"syscall"
 )
 
-compareFiles(lfd syscall.Handle, fd syscall.Handle) (bool, error) {
+func compareFiles(lfd int, fd int) (bool, error) {
 	var lockStat, curStat syscall.Stat_t
 
-	err = syscall.Fstat(lfd, &lockStat)
+	err := syscall.Fstat(lfd, &lockStat)
 	if err != nil {
 		return false, err
 	}

@@ -17,6 +17,7 @@
 package fileutil
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -208,6 +209,6 @@ func SetRoot(dir string) error {
 	return nil
 }
 
-func Openat(cdirfd int, filename string, mode int, flags int) (int, error) {
-	return syscall.Openat(cdirfd, filename, mode, flags)
+func Openat(cdirfd interface{}, filename string, mode int, flags uint32) (int, error) {
+	return syscall.Openat(cdirfd.(int), filename, mode, flags)
 }

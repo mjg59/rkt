@@ -33,6 +33,7 @@ import (
 	"github.com/appc/spec/schema/types"
 	"github.com/coreos/rkt/common"
 	"github.com/coreos/rkt/networking/netinfo"
+	"github.com/coreos/rkt/pkg/fileutil"
 	"github.com/coreos/rkt/pkg/label"
 	"github.com/coreos/rkt/pkg/lock"
 	"github.com/coreos/rkt/pkg/sys"
