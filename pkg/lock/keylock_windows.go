@@ -15,7 +15,7 @@
 package lock
 
 import (
-	"sycall"
+	"syscall"
 )
 
 compareFiles(lfd syscall.Handle, fd syscall.Handle) (bool, error) {
