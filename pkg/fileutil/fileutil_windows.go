@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"unsafe"
 
 	"github.com/coreos/rkt/pkg/uid"
 	"github.com/hashicorp/errwrap"
@@ -154,7 +155,7 @@ func SetRoot(dir string) error {
 	return nil
 }
 
-func Openat(fd syscall.Handle, filename string, mode int, flags int) (int, error) {
+func Openat(fd syscall.Handle, filename string, mode int, flags uint32) (syscall.Handle, error) {
 	pathLen := uint32(syscall.MAX_PATH)
 	path := make([]uint16, pathLen)
 	n, err := getFinalPathNameByHandle(fd, &path[0], pathLen,
@@ -163,8 +164,8 @@ func Openat(fd syscall.Handle, filename string, mode int, flags int) (int, error
 		return 0, err
 	}
 
-	dirpath := syscall.UTF16ToString(path), nil
+	dirpath := syscall.UTF16ToString(path)
 
-	newpath = filepath.Join(dirpath, filename)
+	newpath := filepath.Join(dirpath, filename)
 	return syscall.Open(newpath, mode, flags)
 }

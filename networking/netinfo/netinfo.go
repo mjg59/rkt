@@ -22,6 +22,7 @@ import (
 	"syscall"
 
 	"github.com/appc/cni/pkg/types"
+	"github.com/coreos/rkt/pkg/fileutil"
 )
 
 const filename = "net-info.json"
