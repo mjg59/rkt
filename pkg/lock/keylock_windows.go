@@ -28,7 +28,7 @@ func compareFiles(lfd syscall.Handle, fd syscall.Handle) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if l.FileIndexHigh == d.FileIndexHigh && l.FileIndexLow == d.FileIndexLow {
+	if l.FileIndexHigh == f.FileIndexHigh && l.FileIndexLow == f.FileIndexLow {
 		return true, nil
 	}
 	return false, nil

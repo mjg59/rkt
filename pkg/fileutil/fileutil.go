@@ -17,7 +17,6 @@ package fileutil
 import (
 	"io"
 	"os"
-	"path/filepath"
 	"syscall"
 	"time"
 
