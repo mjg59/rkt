@@ -18,7 +18,7 @@ import (
 	"syscall"
 )
 
-compareFiles(lfd syscall.Handle, fd syscall.Handle) (bool, error) {
+func compareFiles(lfd syscall.Handle, fd syscall.Handle) (bool, error) {
 	var l, f syscall.ByHandleFileInformation
 	err := syscall.GetFileInformationByHandle(lfd, &l)
 	if err != nil {

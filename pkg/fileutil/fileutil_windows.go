@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/coreos/rkt/pkg/uid"
 )
@@ -64,4 +63,20 @@ func os_CopyTree(src, dest string, uidRange *uid.UidRange) error {
 	}
 
 	return nil
+}
+
+// DirSize takes a path and returns its size in bytes
+func DirSize(path string) (int64, error) {
+	seenInode := make(map[uint64]struct{})
+
+	if _, err := os.Stat(path); err == nil {
+		var sz int64
+		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			sz += info.Size()
+			return err
+		})
+		return sz, err
+	}
+
+	return 0, nil
 }
