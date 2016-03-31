@@ -15,6 +15,7 @@
 package fileutil
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
