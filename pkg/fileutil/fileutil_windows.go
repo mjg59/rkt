@@ -25,7 +25,36 @@ import (
 	"github.com/hashicorp/errwrap"
 )
 
+const (
+	FILE_NAME_NORMALIZED = 0x0
+	FILE_NAME_OPEND      = 0x8
+
+	VOLUME_NAME_DOS  = 0x0
+	VOLUME_NAME_GUID = 0x1
+	VOLUME_NAME_NONE = 0x4
+	VOLUME_NAME_NT   = 0x2
+)
+
+var (
+	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
+	procGetFinalPathNameByHandleW = modkernel32.NewProc("GetFinalPathNameByHandleW")
+)
+
 var ErrNotSupportedPlatform = errors.New("function not supported on this platform")
+
+func getFinalPathNameByHandle(handle syscall.Handle, path *uint16, pathLen uint32, flag uint32) (n uint32, err error) {
+	r0, _, e1 := syscall.Syscall6(procGetFinalPathNameByHandleW.Addr(), 4,
+		uintptr(handle), uintptr(unsafe.Pointer(path)), uintptr(pathLen), uintptr(flag), 0, 0)
+	n = uint32(r0)
+	if n == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
 
 func os_CopyTree(src, dest string, uidRange *uid.UidRange) error {
 	cleanSrc := filepath.Clean(src)
@@ -123,4 +152,19 @@ func SetRoot(dir string) error {
 		return errwrap.Wrap(errors.New("failed to chdir"), err)
 	}
 	return nil
+}
+
+func Openat(fd syscall.Handle, filename string, mode int, flags int) (int, error) {
+	pathLen := uint32(syscall.MAX_PATH)
+	path := make([]uint16, pathLen)
+	n, err := getFinalPathNameByHandle(fd, &path[0], pathLen,
+		FILE_NAME_NORMALIZED|VOLUME_NAME_DOS)
+	if err != nil {
+		return 0, err
+	}
+
+	dirpath := syscall.UTF16ToString(path), nil
+
+	newpath = filepath.Join(dirpath, filename)
+	return syscall.Open(newpath, mode, flags)
 }

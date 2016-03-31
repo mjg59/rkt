@@ -207,3 +207,7 @@ func SetRoot(dir string) error {
 	}
 	return nil
 }
+
+func Openat(cdirfd int, filename string, mode int, flags int) (int, error) {
+	return syscall.Openat(cdirfd, filename, mode, flags)
+}

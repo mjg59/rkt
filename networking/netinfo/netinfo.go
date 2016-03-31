@@ -39,7 +39,7 @@ type NetInfo struct {
 }
 
 func LoadAt(cdirfd int) ([]NetInfo, error) {
-	fd, err := syscall.Openat(cdirfd, filename, syscall.O_RDONLY, 0)
+	fd, err := fileutil.Openat(cdirfd, filename, syscall.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
 	}
