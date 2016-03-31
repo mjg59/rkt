@@ -29,6 +29,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/coreos/rkt/pkg/fileutil"
 	"github.com/coreos/rkt/pkg/lock"
 	"github.com/hashicorp/errwrap"
 
@@ -192,8 +193,8 @@ func (s *Store) populateSize() error {
 func NewStore(baseDir string) (*Store, error) {
 	// We need to allow the store's setgid bits (if any) to propagate, so
 	// disable umask
-	um := syscall.Umask(0)
-	defer syscall.Umask(um)
+	um := fileutil.Umask(0)
+	defer fileutil.Umask(um)
 
 	storeDir := filepath.Join(baseDir, "cas")
 
@@ -452,8 +453,8 @@ func (s *Store) ReadStream(key string) (io.ReadCloser, error) {
 func (s *Store) WriteACI(r io.ReadSeeker, latest bool) (string, error) {
 	// We need to allow the store's setgid bits (if any) to propagate, so
 	// disable umask
-	um := syscall.Umask(0)
-	defer syscall.Umask(um)
+	um := fileutil.Umask(0)
+	defer fileutil.Umask(um)
 
 	dr, err := aci.NewCompressedReader(r)
 	if err != nil {
@@ -536,21 +537,21 @@ func (s *Store) RemoveACI(key string) error {
 	defer imageKeyLock.Close()
 
 	// Try to see if we are the owner of the images, if not, returns not enough permission error.
-	for _, ds := range s.stores {
+//	for _, ds := range s.stores {
 		// XXX: The construction of 'path' depends on the implementation of diskv.
-		path := filepath.Join(ds.BasePath, filepath.Join(ds.Transform(key)...))
-		fi, err := os.Stat(path)
-		if err != nil {
-			return errwrap.Wrap(errors.New("cannot get the stat of the image directory"), err)
-		}
+//		path := filepath.Join(ds.BasePath, filepath.Join(ds.Transform(key)...))
+//		fi, err := os.Stat(path)
+//		if err != nil {
+//			return errwrap.Wrap(errors.New("cannot get the stat of the image directory"), err)
+//		}
 
-		uid := os.Getuid()
-		dirUid := int(fi.Sys().(*syscall.Stat_t).Uid)
-
-		if uid != dirUid && uid != 0 {
-			return fmt.Errorf("permission denied, are you root or the owner of the image?")
-		}
-	}
+//		uid := os.Getuid()
+//		dirUid := int(fi.Sys().(*syscall.Stat_t).Uid)
+//
+//		if uid != dirUid && uid != 0 {
+//			return fmt.Errorf("permission denied, are you root or the owner of the image?")
+//		}
+//	}
 
 	// Firstly remove aciinfo and remote from the db in an unique transaction.
 	// remote needs to be removed or a GetRemote will return a blobKey not

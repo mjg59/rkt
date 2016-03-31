@@ -84,9 +84,9 @@ func (ts *TreeStore) Write(id string, key string, s *Store) (string, error) {
 		return "", err
 	}
 	defer syscall.Close(dfd)
-	if err := sys.Syncfs(dfd); err != nil {
-		return "", errwrap.Wrap(errors.New("failed to sync data"), err)
-	}
+//	if err := sys.Syncfs(dfd); err != nil {
+//		return "", errwrap.Wrap(errors.New("failed to sync data"), err)
+//	}
 	// Create rendered file
 	f, err := os.Create(filepath.Join(treepath, renderedfilename))
 	if err != nil {
