@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/coreos/rkt/pkg/uid"
+	"github.com/hashicorp/errwrap"
 )
 
 var ErrNotSupportedPlatform = errors.New("function not supported on this platform")
@@ -92,7 +94,7 @@ func getInode(fi os.FileInfo) uint64 {
 
 // These functions are from github.com/docker/docker/pkg/system
 
-func LUtimesNano(path string, bonghits int) error {
+func LUtimesNano(path string, ts []syscall.Timespec) error {
 	return ErrNotSupportedPlatform
 }
 
@@ -104,8 +106,8 @@ func Lsetxattr(path string, attr string, data []byte, flags int) error {
 	return ErrNotSupportedPlatform
 }
 
-func Umask(umask int) error {
-	return nil
+func Umask(umask int) int {
+	return 0
 }
 
 func Mknod(path string, mode uint32, dev int) (err error) {
@@ -113,5 +115,12 @@ func Mknod(path string, mode uint32, dev int) (err error) {
 }
 
 func Mkfifo(path string, mode uint32) (err error) {
+	return nil
+}
+
+func SetRoot(dir string) error {
+	if err := syscall.Chdir(dir); err != nil {
+		return errwrap.Wrap(errors.New("failed to chdir"), err)
+	}
 	return nil
 }

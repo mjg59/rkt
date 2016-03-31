@@ -25,6 +25,7 @@ import (
 
 	"github.com/coreos/rkt/pkg/uid"
 	"github.com/appc/spec/pkg/device"
+	"github.com/hashicorp/errwrap"
 )
 
 func pathToTimespec(name string) ([]syscall.Timespec, error) {
@@ -185,7 +186,7 @@ func DirSize(path string) (int64, error) {
 	return 0, nil
 }
 
-func Umask(umask int) error {
+func Umask(umask int) int {
 	return syscall.Umask(umask)
 }
 
@@ -197,3 +198,12 @@ func Mkfifo(path string, mode uint32) (err error) {
 	return syscall.Mkfifo(path, mode)
 }
 
+func SetRoot(dir string) error {
+	if err := syscall.Chroot(dir); err != nil {
+		return errwrap.Wrap(fmt.Errorf("failed to chroot in %s", dir), err)
+	}
+	if err := syscall.Chdir("/"); err != nil {
+		return errwrap.Wrap(errors.New("failed to chdir"), err)
+	}
+	return nil
+}

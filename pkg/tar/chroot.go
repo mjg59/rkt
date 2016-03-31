@@ -70,11 +70,8 @@ func extractTarCommand() error {
 
 	uidRange := &uid.UidRange{Shift: uint32(us), Count: uint32(uc)}
 
-	if err := syscall.Chroot(dir); err != nil {
-		return errwrap.Wrap(fmt.Errorf("failed to chroot in %s", dir), err)
-	}
-	if err := syscall.Chdir("/"); err != nil {
-		return errwrap.Wrap(errors.New("failed to chdir"), err)
+	if err := fileutil.SetRoot(dir); err != nil {
+		return err
 	}
 	fileMapFile := os.NewFile(uintptr(fileMapFdNum), "fileMap")
 
