@@ -14,8 +14,6 @@
 
 // inspired by github.com/docker/docker/pkg/reexec
 
-//+build linux
-
 package multicall
 
 import (
