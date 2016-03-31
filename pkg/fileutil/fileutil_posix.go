@@ -184,3 +184,16 @@ func DirSize(path string) (int64, error) {
 
 	return 0, nil
 }
+
+func Umask(umask int) error {
+	return syscall.Umask(umask)
+}
+
+func Mknod(path string, mode uint32, dev int) (err error) {
+	return syscall.Mknod(path, mode, dev)
+}
+
+func Mkfifo(path string, mode uint32) (err error) {
+	return syscall.Mkfifo(path, mode)
+}
+

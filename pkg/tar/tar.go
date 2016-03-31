@@ -75,8 +75,8 @@ func NewUidShiftingFilePermEditor(uidRange *uid.UidRange) (FilePermissionsEditor
 // directory. If pwl is not nil, only the paths in the map are extracted. If
 // overwrite is true, existing files will be overwritten.
 func ExtractTarInsecure(tr *tar.Reader, target string, overwrite bool, pwl PathWhitelistMap, editor FilePermissionsEditor) error {
-	um := syscall.Umask(0)
-	defer syscall.Umask(um)
+	um := fileutil.Umask(0)
+	defer fileutil.Umask(um)
 
 	var dirhdrs []*tar.Header
 Tar:
@@ -181,17 +181,17 @@ func extractFile(tr *tar.Reader, target string, hdr *tar.Header, overwrite bool,
 	case typ == tar.TypeChar:
 		dev := device.Makedev(uint(hdr.Devmajor), uint(hdr.Devminor))
 		mode := uint32(fi.Mode()) | syscall.S_IFCHR
-		if err := syscall.Mknod(p, mode, int(dev)); err != nil {
+		if err := fileutil.Mknod(p, mode, int(dev)); err != nil {
 			return err
 		}
 	case typ == tar.TypeBlock:
 		dev := device.Makedev(uint(hdr.Devmajor), uint(hdr.Devminor))
 		mode := uint32(fi.Mode()) | syscall.S_IFBLK
-		if err := syscall.Mknod(p, mode, int(dev)); err != nil {
+		if err := fileutil.Mknod(p, mode, int(dev)); err != nil {
 			return err
 		}
 	case typ == tar.TypeFifo:
-		if err := syscall.Mkfifo(p, uint32(fi.Mode())); err != nil {
+		if err := fileutil.Mkfifo(p, uint32(fi.Mode())); err != nil {
 			return err
 		}
 	// TODO(jonboulle): implement other modes

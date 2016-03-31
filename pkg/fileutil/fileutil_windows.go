@@ -78,3 +78,37 @@ func DirSize(path string) (int64, error) {
 
 	return 0, nil
 }
+
+func hasHardLinks(fi os.FileInfo) bool {
+	return false
+}
+
+func getInode(fi os.FileInfo) uint64 {
+	return 0
+}
+
+// These functions are from github.com/docker/docker/pkg/system
+
+func LUtimesNano(path string, ts []syscall.Timespec) error {
+	return ErrNotSupportedPlatform
+}
+
+func Lgetxattr(path string, attr string) ([]byte, error) {
+	return nil, ErrNotSupportedPlatform
+}
+
+func Lsetxattr(path string, attr string, data []byte, flags int) error {
+	return ErrNotSupportedPlatform
+}
+
+func Umask(umask int) error {
+	return syscall.Umask(umask)
+}
+
+func Mknod(path string, mode uint32, dev int) (err error) {
+	return syscall.Mknod(path, mode, dev)
+}
+
+func Mkfifo(path string, mode uint32) (err error) {
+	return syscall.Mkfifo(path, mode)
+}
