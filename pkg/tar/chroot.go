@@ -24,8 +24,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"syscall"
 
+	"github.com/coreos/rkt/pkg/fileutil"
 	"github.com/coreos/rkt/pkg/multicall"
 	"github.com/coreos/rkt/pkg/sys"
 	"github.com/coreos/rkt/pkg/uid"
